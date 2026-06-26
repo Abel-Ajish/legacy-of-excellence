@@ -52,14 +52,26 @@ export default function AdminPage() {
         body: JSON.stringify({ id, status, password }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
         setError(data.error || 'Failed to update');
         return;
       }
 
+      // Verify the response has all required fields
+      if (!data.name || !data.message) {
+        // Refetch all messages to ensure correct state
+        const refreshRes = await fetch('/api/messages');
+        if (refreshRes.ok) {
+          const allMessages = await refreshRes.json();
+          setMessages(allMessages);
+        }
+        return;
+      }
+
       setMessages((prev) =>
-        prev.map((m) => (m.id === id ? { ...m, status } : m))
+        prev.map((m) => (m.id === id ? { ...m, name: data.name, message: data.message, role: data.role, status: data.status, createdAt: data.createdAt } : m))
       );
     } catch {
       setError('Failed to update message');

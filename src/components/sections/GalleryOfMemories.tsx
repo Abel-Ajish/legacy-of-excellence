@@ -10,19 +10,19 @@ interface GalleryImage {
   category: string;
 }
 
-const categories = ['All', 'Leadership', 'Students', 'Events', 'Annual Day', 'Academics', 'Teachers'];
+const categories = ['All', 'Leadership', 'Students', 'Events', 'Anniversary', 'Academics', 'Teachers'];
 
 const galleryImages: GalleryImage[] = [
   { id: 1, src: '/images/gallery/leadership-1.jpg', alt: 'Leadership moment', category: 'Leadership' },
   { id: 2, src: '/images/gallery/students-1.jpg', alt: 'Students group', category: 'Students' },
   { id: 3, src: '/images/gallery/events-1.jpg', alt: 'School event', category: 'Events' },
-  { id: 4, src: '/images/gallery/annual-1.jpg', alt: 'Annual Day celebration', category: 'Annual Day' },
+  { id: 4, src: '/images/gallery/anniversary-1.jpg', alt: 'Anniversary celebration', category: 'Anniversary' },
   { id: 5, src: '/images/gallery/academics-1.jpg', alt: 'Academic excellence', category: 'Academics' },
   { id: 6, src: '/images/gallery/teachers-1.jpg', alt: 'Teachers team', category: 'Teachers' },
   { id: 7, src: '/images/gallery/leadership-2.jpg', alt: 'Leadership speech', category: 'Leadership' },
   { id: 8, src: '/images/gallery/students-2.jpg', alt: 'Students achievement', category: 'Students' },
   { id: 9, src: '/images/gallery/events-2.jpg', alt: 'Cultural event', category: 'Events' },
-  { id: 10, src: '/images/gallery/annual-2.jpg', alt: 'Annual Day performance', category: 'Annual Day' },
+  { id: 10, src: '/images/gallery/anniversary-1.jpg', alt: 'Anniversary performance', category: 'Anniversary' },
   { id: 11, src: '/images/gallery/academics-2.jpg', alt: 'Classroom learning', category: 'Academics' },
   { id: 12, src: '/images/gallery/teachers-2.jpg', alt: 'Teachers workshop', category: 'Teachers' },
 ];
@@ -90,10 +90,13 @@ export default function GalleryOfMemories() {
                   className="relative group overflow-hidden rounded-xl cursor-pointer w-full"
                   aria-label={`View ${image.alt}`}
                 >
-                  <div className="aspect-[4/3] bg-gray-200 image-placeholder">
-                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
-                      <span>{image.alt}</span>
-                    </div>
+                  <div className="aspect-[4/3] bg-gray-200 overflow-hidden">
+                    <img
+                      src={image.src}
+                      alt={image.alt}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      loading="lazy"
+                    />
                   </div>
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
                     <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -139,10 +142,12 @@ export default function GalleryOfMemories() {
                 </svg>
               </button>
               <div className="bg-gray-900 rounded-2xl overflow-hidden">
-                <div className="aspect-video bg-gray-800 image-placeholder relative">
-                  <div className="absolute inset-0 flex items-center justify-center text-white/50">
-                    <span>{lightboxImage.alt}</span>
-                  </div>
+                <div className="aspect-video bg-gray-800 relative overflow-hidden">
+                  <img
+                    src={lightboxImage.src}
+                    alt={lightboxImage.alt}
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <div className="p-4 sm:p-6">
                   <h3 className="text-white text-lg sm:text-xl font-semibold">{lightboxImage.alt}</h3>
