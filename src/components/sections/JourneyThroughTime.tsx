@@ -16,7 +16,7 @@ const timelineEvents: TimelineEvent[] = [
   { year: '1994', title: 'Head Teacher', description: 'Promoted to Head Teacher, overseeing academic programs and curriculum development.', photo: '/images/timeline/1994.jpg' },
   { year: '2000', title: 'Vice Principal', description: 'Elevated to Vice Principal, playing a crucial role in school administration and growth.', photo: '/images/timeline/2000.jpg' },
   { year: '2012', title: 'Principal', description: 'Appointed as Principal, leading the school to new heights of academic excellence.', photo: '/images/timeline/2012.jpg' },
-  { year: '2016', title: 'Senior Secondary Expansion', description: 'Introduced Senior Secondary section, expanding educational offerings for students.', photo: '/images/timeline/2016.jpg' },
+  { year: '2019', title: 'Senior Secondary Expansion', description: 'Introduced Senior Secondary section, expanding educational offerings for students.', photo: '/images/timeline/2019.jpg' },
   { year: '2026', title: 'Retirement', description: 'Concluding 35 years of dedicated service, leaving behind an indelible legacy.', photo: '/images/timeline/2026.jpg' },
 ];
 

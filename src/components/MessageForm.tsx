@@ -39,7 +39,7 @@ export default function MessageForm() {
   };
 
   return (
-    <section className="bg-white py-16 md:py-20">
+    <section id="message-form" className="bg-white py-16 md:py-20">
       <div className="container mx-auto px-4 sm:px-6 max-w-2xl">
         <motion.h2
           initial={{ opacity: 0, y: 30 }}

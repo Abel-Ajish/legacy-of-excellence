@@ -66,6 +66,28 @@ export default function AdminPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this message permanently?')) return;
+
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, password }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Failed to delete');
+        return;
+      }
+
+      setMessages((prev) => prev.filter((m) => m.id !== id));
+    } catch {
+      setError('Failed to delete message');
+    }
+  };
+
   const filtered = filter === 'all' ? messages : messages.filter((m) => m.status === filter);
   const pendingCount = messages.filter((m) => m.status === 'pending').length;
 
@@ -207,6 +229,15 @@ export default function AdminPage() {
                           Reject
                         </button>
                       </div>
+                    )}
+
+                    {msg.status !== 'pending' && (
+                      <button
+                        onClick={() => handleDelete(msg.id)}
+                        className="px-3 py-1.5 bg-red-600/20 text-red-400 text-xs rounded-lg hover:bg-red-600/40 transition-colors sm:flex-shrink-0"
+                      >
+                        Delete
+                      </button>
                     )}
                   </div>
                 </motion.div>
