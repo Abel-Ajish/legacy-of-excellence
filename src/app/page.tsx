@@ -28,7 +28,10 @@ export default function Home() {
         <MessageForm />
         <LegacyWall />
         <ThankYouSection />
-        <footer className="bg-black py-8 text-center">
+        <footer className="bg-black py-8 px-6 text-center relative">
+          <p className="text-white/30 text-xs absolute bottom-2 right-4">
+            Courtesy: Abel Ajish
+          </p>
           <p className="text-white/50 text-sm">
             Made with love by{' '}
             <span

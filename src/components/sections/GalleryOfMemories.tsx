@@ -19,12 +19,19 @@ const galleryImages: GalleryImage[] = [
   { id: 4, src: '/images/gallery/anniversary-1.jpg', alt: 'Anniversary celebration', category: 'Anniversary' },
   { id: 5, src: '/images/gallery/academics-1.jpg', alt: 'Academic excellence', category: 'Academics' },
   { id: 6, src: '/images/gallery/teachers-1.jpg', alt: 'Teachers team', category: 'Teachers' },
-  { id: 7, src: '/images/gallery/leadership-2.jpg', alt: 'Leadership speech', category: 'Leadership' },
+  { id: 7, src: '/images/gallery/leadership-2.jpg', alt: 'Leadership in action', category: 'Leadership' },
   { id: 8, src: '/images/gallery/students-2.jpg', alt: 'Students achievement', category: 'Students' },
-  { id: 9, src: '/images/gallery/events-2.jpg', alt: 'Cultural event', category: 'Events' },
+  { id: 9, src: '/images/gallery/events-2.jpg', alt: 'Bahrain National Day Celebration', category: 'Events' },
   { id: 10, src: '/images/gallery/anniversary-2.jpg', alt: 'Anniversary performance', category: 'Anniversary' },
-  { id: 11, src: '/images/gallery/academics-2.jpg', alt: 'Classroom learning', category: 'Academics' },
+  { id: 11, src: '/images/gallery/academics-2.jpg', alt: 'Award Ceremony', category: 'Academics' },
   { id: 12, src: '/images/gallery/teachers-2.jpg', alt: 'Teachers workshop', category: 'Teachers' },
+  { id: 13, src: '/images/gallery/leadership-3.jpg', alt: 'Group photo with chairman', category: 'Leadership' },
+  { id: 14, src: '/images/gallery/leadership-4.jpg', alt: 'Guiding the school', category: 'Leadership' },
+  { id: 15, src: '/images/gallery/students-3.jpg', alt: 'Basketball Team', category: 'Students' },
+  { id: 16, src: '/images/gallery/students-4.jpg', alt: 'Sports Achievement', category: 'Students' },
+  { id: 17, src: '/images/gallery/students-5.jpg', alt: 'A hug of pure love', category: 'Students' },
+  { id: 18, src: '/images/gallery/students-6.jpg', alt: 'Students with Ms.Mammen', category: 'Students' },
+  { id: 19, src: '/images/gallery/events-3.jpg', alt: 'Transdisciplinary Showcase on SDG', category: 'Events' },
 ];
 
 export default function GalleryOfMemories() {
@@ -72,8 +79,8 @@ export default function GalleryOfMemories() {
           </div>
         </motion.div>
 
-        {/* Masonry grid */}
-        <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 sm:gap-6 space-y-4 sm:space-y-6">
+        {/* Gallery grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-7xl mx-auto">
           <AnimatePresence mode="sync">
             {filteredImages.map((image, index) => (
               <motion.div
@@ -83,7 +90,7 @@ export default function GalleryOfMemories() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
-                className="break-inside-avoid"
+                className=""
               >
                 <button
                   onClick={() => setLightboxImage(image)}
