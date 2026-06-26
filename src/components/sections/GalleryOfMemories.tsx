@@ -22,7 +22,7 @@ const galleryImages: GalleryImage[] = [
   { id: 7, src: '/images/gallery/leadership-2.jpg', alt: 'Leadership speech', category: 'Leadership' },
   { id: 8, src: '/images/gallery/students-2.jpg', alt: 'Students achievement', category: 'Students' },
   { id: 9, src: '/images/gallery/events-2.jpg', alt: 'Cultural event', category: 'Events' },
-  { id: 10, src: '/images/gallery/anniversary-1.jpg', alt: 'Anniversary performance', category: 'Anniversary' },
+  { id: 10, src: '/images/gallery/anniversary-2.jpg', alt: 'Anniversary performance', category: 'Anniversary' },
   { id: 11, src: '/images/gallery/academics-2.jpg', alt: 'Classroom learning', category: 'Academics' },
   { id: 12, src: '/images/gallery/teachers-2.jpg', alt: 'Teachers workshop', category: 'Teachers' },
 ];
@@ -122,6 +122,8 @@ export default function GalleryOfMemories() {
             className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 overflow-y-auto"
             onClick={() => setLightboxImage(null)}
             onKeyDown={(e) => { if (e.key === 'Escape') setLightboxImage(null); }}
+            tabIndex={-1}
+            ref={(el) => el?.focus()}
           >
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
@@ -130,6 +132,7 @@ export default function GalleryOfMemories() {
               className="max-w-4xl w-full relative"
               role="dialog"
               aria-modal="true"
+              aria-labelledby="gallery-lightbox-title"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -150,7 +153,7 @@ export default function GalleryOfMemories() {
                   />
                 </div>
                 <div className="p-4 sm:p-6">
-                  <h3 className="text-white text-lg sm:text-xl font-semibold">{lightboxImage.alt}</h3>
+                  <h3 id="gallery-lightbox-title" className="text-white text-lg sm:text-xl font-semibold">{lightboxImage.alt}</h3>
                   <p className="text-gold text-sm mt-2">{lightboxImage.category}</p>
                 </div>
               </div>

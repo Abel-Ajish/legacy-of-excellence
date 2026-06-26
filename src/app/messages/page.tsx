@@ -24,7 +24,7 @@ export default function MessagesPage() {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          setMessages(data.map((m: any) => ({
+          setMessages(data.map((m: Message) => ({
             name: m.name,
             role: m.role || '',
             message: m.message,

@@ -10,14 +10,9 @@ interface Moment {
 
 const moments: Moment[] = [
   {
-    title: 'Annual Day 2025',
+    title: '40th Anniversary',
     description: 'A spectacular celebration of talent and creativity, showcasing the diverse abilities of students under Mrs. Mammen\'s guidance.',
-    photo: '/images/annual-day/2025.jpg',
-  },
-  {
-    title: 'SDG Showcase 2025',
-    description: 'Students presented innovative solutions to global challenges, reflecting the school\'s commitment to sustainable development.',
-    photo: '/images/awards/sdg-2025.jpg',
+    photo: '/images/awards/2025.jpg',
   },
   {
     title: 'Academic Excellence Awards',
@@ -27,7 +22,7 @@ const moments: Moment[] = [
   {
     title: 'Leadership Milestones',
     description: 'Celebrating key moments in Mrs. Mammen\'s leadership journey that shaped the school\'s trajectory.',
-    photo: '/images/awards/leadership.jpg',
+    photo: '/images/awards/leaership.jpg',
   },
 ];
 
@@ -60,10 +55,13 @@ export default function MomentsOfImpact() {
                 className="w-full lg:w-1/2"
               >
                 <div className="relative group overflow-hidden rounded-2xl">
-                  <div className="aspect-video bg-gray-800 image-placeholder">
-                    <div className="absolute inset-0 flex items-center justify-center text-white/50 text-sm">
-                      <span>{moment.title}</span>
-                    </div>
+                  <div className="aspect-video bg-gray-800 overflow-hidden">
+                    <img
+                      src={moment.photo}
+                      alt={moment.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>

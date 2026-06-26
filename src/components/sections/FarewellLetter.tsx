@@ -85,7 +85,7 @@ export default function FarewellLetter() {
                 {/* Signature */}
                 <div className="border-t border-gold/30 pt-6">
                   <p className="text-gray-600 mb-2">With deepest gratitude,</p>
-                  <p className="text-2xl text-gold font-cursive italic">
+                  <p className="text-2xl text-gold font-serif italic">
                     Molly Treasa Mammen
                   </p>
                   <p className="text-gray-500 text-sm mt-2">

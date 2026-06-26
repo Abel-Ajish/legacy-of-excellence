@@ -57,7 +57,7 @@ export default function MessageForm() {
           transition={{ delay: 0.2 }}
           className="text-center text-gray-500 mb-10 text-sm sm:text-base"
         >
-          Share your memories and appreciation. Messages will appear after review.
+          Share your memories and appreciation. Messages will appear after a while.
         </motion.p>
 
         <AnimatePresence mode="wait">
@@ -70,7 +70,7 @@ export default function MessageForm() {
             >
               <div className="text-4xl mb-4">✨</div>
               <h3 className="text-xl font-semibold text-green-800 mb-2">Thank you!</h3>
-              <p className="text-green-600">Your message has been submitted and will appear after review.</p>
+              <p className="text-green-600">Your message has been received. It will appear after a while.</p>
               <button
                 onClick={() => {
                   setSubmitted(false);

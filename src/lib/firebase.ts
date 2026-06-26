@@ -44,7 +44,7 @@ export async function getMessages(status?: string): Promise<Message[]> {
     if (!data.documents) return [];
     const all = data.documents.map(parseFirestoreDoc);
     if (status) {
-      return all.filter((m) => m.status === status);
+      return all.filter((m: Message) => m.status === status);
     }
     return all;
   } catch {

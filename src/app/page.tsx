@@ -32,13 +32,9 @@ export default function Home() {
           <p className="text-white/50 text-sm">
             Made with love by{' '}
             <span
-              style={{
-                color: '#c9a227',
-                animation: 'glowSubtle 3s ease-in-out infinite',
-                display: 'inline-block',
-              }}
+              className="text-gold inline-block animate-glow-subtle"
             >
-              ASB Middle Section
+              ASB Family
             </span>
           </p>
         </footer>

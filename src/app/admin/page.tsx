@@ -113,8 +113,10 @@ export default function AdminPage() {
         >
           <h1 className="text-2xl font-bold text-white text-center mb-6">Admin Access</h1>
           <form onSubmit={handleAuth}>
-            <input
-              type="password"
+              <label htmlFor="admin-password" className="sr-only">Admin Password</label>
+              <input
+                id="admin-password"
+                type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter password"

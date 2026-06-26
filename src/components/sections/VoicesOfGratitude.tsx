@@ -19,7 +19,7 @@ export default function VoicesOfGratitude() {
       .then((data) => {
         if (Array.isArray(data)) {
           const shuffled = [...data].sort(() => Math.random() - 0.5);
-          setTestimonials(shuffled.slice(0, 6).map((m: any) => ({
+          setTestimonials(shuffled.slice(0, 6).map((m: Testimonial) => ({
             name: m.name,
             role: m.role || '',
             message: m.message,
