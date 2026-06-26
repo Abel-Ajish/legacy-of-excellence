@@ -23,7 +23,7 @@ const slides: Slide[] = [
   },
   {
     photo: '/images/campus/senior.jpg',
-    text: 'Senior Secondary introduced in 2016.',
+    text: 'Senior Secondary introduced in 2019.',
   },
   {
     photo: '/images/campus/graduation.jpg',
@@ -44,7 +44,7 @@ function ParallaxSlide({ slide, index }: { slide: Slide; index: number }) {
   return (
     <div
       ref={ref}
-      className="relative h-[100dvh] flex items-center justify-center overflow-hidden"
+      className="relative min-h-[40vh] flex items-center justify-center overflow-hidden"
     >
       {/* Background image with parallax */}
       <motion.div

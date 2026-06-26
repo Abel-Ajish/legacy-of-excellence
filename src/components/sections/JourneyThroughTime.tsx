@@ -16,7 +16,7 @@ const timelineEvents: TimelineEvent[] = [
   { year: '1994', title: 'Head Teacher', description: 'Promoted to Head Teacher, overseeing academic programs and curriculum development.', photo: '/images/timeline/1994.jpg' },
   { year: '2000', title: 'Vice Principal', description: 'Elevated to Vice Principal, playing a crucial role in school administration and growth.', photo: '/images/timeline/2000.jpg' },
   { year: '2012', title: 'Principal', description: 'Appointed as Principal, leading the school to new heights of academic excellence.', photo: '/images/timeline/2012.jpg' },
-  { year: '2016', title: 'Senior Secondary Expansion', description: 'Introduced Senior Secondary section, expanding educational offerings for students.', photo: '/images/timeline/2016.jpg' },
+  { year: '2019', title: 'Senior Secondary Expansion', description: 'Introduced Senior Secondary section, expanding educational offerings for students.', photo: '/images/timeline/2019.jpg' },
   { year: '2026', title: 'Retirement', description: 'Concluding 35 years of dedicated service, leaving behind an indelible legacy.', photo: '/images/timeline/2026.jpg' },
 ];
 
@@ -109,6 +109,8 @@ export default function JourneyThroughTime() {
             className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
             onClick={() => setSelectedEvent(null)}
             onKeyDown={(e) => { if (e.key === 'Escape') setSelectedEvent(null); }}
+            tabIndex={-1}
+            ref={(el) => el?.focus()}
           >
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
@@ -117,6 +119,7 @@ export default function JourneyThroughTime() {
               className="bg-navy-light rounded-2xl max-w-2xl w-full overflow-hidden max-h-[90vh] overflow-y-auto"
               role="dialog"
               aria-modal="true"
+              aria-labelledby={`timeline-title-${selectedEvent.year}`}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="relative h-48 sm:h-64 bg-gray-800 image-placeholder">
@@ -126,7 +129,7 @@ export default function JourneyThroughTime() {
               </div>
               <div className="p-6 sm:p-8">
                 <p className="text-gold text-2xl sm:text-3xl font-bold mb-2">{selectedEvent.year}</p>
-                <h3 className="text-white text-xl sm:text-2xl font-bold mb-4">{selectedEvent.title}</h3>
+                <h3 id={`timeline-title-${selectedEvent.year}`} className="text-white text-xl sm:text-2xl font-bold mb-4">{selectedEvent.title}</h3>
                 <p className="text-white/80 leading-relaxed mb-6 text-sm sm:text-base">{selectedEvent.description}</p>
                 <div className="border-t border-gold/30 pt-4">
                   <p className="text-white/60 italic text-sm sm:text-base">

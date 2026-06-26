@@ -10,21 +10,28 @@ interface GalleryImage {
   category: string;
 }
 
-const categories = ['All', 'Leadership', 'Students', 'Events', 'Annual Day', 'Academics', 'Teachers'];
+const categories = ['All', 'Leadership', 'Students', 'Events', 'Anniversary', 'Academics', 'Teachers'];
 
 const galleryImages: GalleryImage[] = [
   { id: 1, src: '/images/gallery/leadership-1.jpg', alt: 'Leadership moment', category: 'Leadership' },
   { id: 2, src: '/images/gallery/students-1.jpg', alt: 'Students group', category: 'Students' },
   { id: 3, src: '/images/gallery/events-1.jpg', alt: 'School event', category: 'Events' },
-  { id: 4, src: '/images/gallery/annual-1.jpg', alt: 'Annual Day celebration', category: 'Annual Day' },
+  { id: 4, src: '/images/gallery/anniversary-1.jpg', alt: 'Anniversary celebration', category: 'Anniversary' },
   { id: 5, src: '/images/gallery/academics-1.jpg', alt: 'Academic excellence', category: 'Academics' },
   { id: 6, src: '/images/gallery/teachers-1.jpg', alt: 'Teachers team', category: 'Teachers' },
-  { id: 7, src: '/images/gallery/leadership-2.jpg', alt: 'Leadership speech', category: 'Leadership' },
+  { id: 7, src: '/images/gallery/leadership-2.jpg', alt: 'Leadership in action', category: 'Leadership' },
   { id: 8, src: '/images/gallery/students-2.jpg', alt: 'Students achievement', category: 'Students' },
-  { id: 9, src: '/images/gallery/events-2.jpg', alt: 'Cultural event', category: 'Events' },
-  { id: 10, src: '/images/gallery/annual-2.jpg', alt: 'Annual Day performance', category: 'Annual Day' },
-  { id: 11, src: '/images/gallery/academics-2.jpg', alt: 'Classroom learning', category: 'Academics' },
+  { id: 9, src: '/images/gallery/events-2.jpg', alt: 'Bahrain National Day Celebration', category: 'Events' },
+  { id: 10, src: '/images/gallery/anniversary-2.jpg', alt: 'Anniversary performance', category: 'Anniversary' },
+  { id: 11, src: '/images/gallery/academics-2.jpg', alt: 'Award Ceremony', category: 'Academics' },
   { id: 12, src: '/images/gallery/teachers-2.jpg', alt: 'Teachers workshop', category: 'Teachers' },
+  { id: 13, src: '/images/gallery/leadership-3.jpg', alt: 'Group photo with chairman', category: 'Leadership' },
+  { id: 14, src: '/images/gallery/leadership-4.jpg', alt: 'Guiding the school', category: 'Leadership' },
+  { id: 15, src: '/images/gallery/students-3.jpg', alt: 'Basketball Team', category: 'Students' },
+  { id: 16, src: '/images/gallery/students-4.jpg', alt: 'Sports Achievement', category: 'Students' },
+  { id: 17, src: '/images/gallery/students-5.jpg', alt: 'A hug of pure love', category: 'Students' },
+  { id: 18, src: '/images/gallery/students-6.jpg', alt: 'Students with Ms.Mammen', category: 'Students' },
+  { id: 19, src: '/images/gallery/events-3.jpg', alt: 'Transdisciplinary Showcase on SDG', category: 'Events' },
 ];
 
 export default function GalleryOfMemories() {
@@ -72,8 +79,8 @@ export default function GalleryOfMemories() {
           </div>
         </motion.div>
 
-        {/* Masonry grid */}
-        <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 sm:gap-6 space-y-4 sm:space-y-6">
+        {/* Gallery grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-7xl mx-auto">
           <AnimatePresence mode="sync">
             {filteredImages.map((image, index) => (
               <motion.div
@@ -83,17 +90,20 @@ export default function GalleryOfMemories() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
-                className="break-inside-avoid"
+                className=""
               >
                 <button
                   onClick={() => setLightboxImage(image)}
                   className="relative group overflow-hidden rounded-xl cursor-pointer w-full"
                   aria-label={`View ${image.alt}`}
                 >
-                  <div className="aspect-[4/3] bg-gray-200 image-placeholder">
-                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
-                      <span>{image.alt}</span>
-                    </div>
+                  <div className="aspect-[4/3] bg-gray-200 overflow-hidden">
+                    <img
+                      src={image.src}
+                      alt={image.alt}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      loading="lazy"
+                    />
                   </div>
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
                     <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -119,6 +129,8 @@ export default function GalleryOfMemories() {
             className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 overflow-y-auto"
             onClick={() => setLightboxImage(null)}
             onKeyDown={(e) => { if (e.key === 'Escape') setLightboxImage(null); }}
+            tabIndex={-1}
+            ref={(el) => el?.focus()}
           >
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
@@ -127,6 +139,7 @@ export default function GalleryOfMemories() {
               className="max-w-4xl w-full relative"
               role="dialog"
               aria-modal="true"
+              aria-labelledby="gallery-lightbox-title"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -139,13 +152,15 @@ export default function GalleryOfMemories() {
                 </svg>
               </button>
               <div className="bg-gray-900 rounded-2xl overflow-hidden">
-                <div className="aspect-video bg-gray-800 image-placeholder relative">
-                  <div className="absolute inset-0 flex items-center justify-center text-white/50">
-                    <span>{lightboxImage.alt}</span>
-                  </div>
+                <div className="aspect-video bg-gray-800 relative overflow-hidden">
+                  <img
+                    src={lightboxImage.src}
+                    alt={lightboxImage.alt}
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <div className="p-4 sm:p-6">
-                  <h3 className="text-white text-lg sm:text-xl font-semibold">{lightboxImage.alt}</h3>
+                  <h3 id="gallery-lightbox-title" className="text-white text-lg sm:text-xl font-semibold">{lightboxImage.alt}</h3>
                   <p className="text-gold text-sm mt-2">{lightboxImage.category}</p>
                 </div>
               </div>

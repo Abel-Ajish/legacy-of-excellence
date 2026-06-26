@@ -9,6 +9,7 @@ import TheSchoolSheHelpedShape from '@/components/sections/TheSchoolSheHelpedSha
 import GalleryOfMemories from '@/components/sections/GalleryOfMemories';
 import MomentsOfImpact from '@/components/sections/MomentsOfImpact';
 import VoicesOfGratitude from '@/components/sections/VoicesOfGratitude';
+import MessageForm from '@/components/MessageForm';
 import LegacyWall from '@/components/sections/LegacyWall';
 import ThankYouSection from '@/components/sections/ThankYouSection';
 
@@ -24,19 +25,19 @@ export default function Home() {
         <GalleryOfMemories />
         <MomentsOfImpact />
         <VoicesOfGratitude />
+        <MessageForm />
         <LegacyWall />
         <ThankYouSection />
-        <footer className="bg-black py-8 text-center">
+        <footer className="bg-black py-8 px-6 text-center relative">
+          <p className="text-white/30 text-xs absolute bottom-2 right-4">
+            Courtesy: Abel Ajish
+          </p>
           <p className="text-white/50 text-sm">
             Made with love by{' '}
             <span
-              style={{
-                color: '#c9a227',
-                animation: 'glowSubtle 3s ease-in-out infinite',
-                display: 'inline-block',
-              }}
+              className="text-gold inline-block animate-glow-subtle"
             >
-              ASB Middle Section
+              ASB Family
             </span>
           </p>
         </footer>

@@ -53,7 +53,7 @@ export default function FarewellLetter() {
                 </p>
 
                 <p className="text-gray-700 leading-relaxed mb-6">
-                  The introduction of Senior Secondary education in 2016 stands
+                  The introduction of Senior Secondary education in 2019 stands
                   as a testament to our collective ambition and determination.
                   What began as a vision has become a reality that continues to
                   shape the futures of thousands of young minds.
@@ -85,7 +85,7 @@ export default function FarewellLetter() {
                 {/* Signature */}
                 <div className="border-t border-gold/30 pt-6">
                   <p className="text-gray-600 mb-2">With deepest gratitude,</p>
-                  <p className="text-2xl text-gold font-cursive italic">
+                  <p className="text-2xl text-gold font-serif italic">
                     Molly Treasa Mammen
                   </p>
                   <p className="text-gray-500 text-sm mt-2">

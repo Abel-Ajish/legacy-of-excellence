@@ -260,6 +260,12 @@ export default function LegacyWall() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50 p-4"
             onClick={() => setSelectedWord(null)}
+            onKeyDown={(e) => { if (e.key === 'Escape') setSelectedWord(null); }}
+            tabIndex={-1}
+            ref={(el) => el?.focus()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="legacy-wall-quote-title"
           >
             <motion.div
               initial={{ scale: 0.7, opacity: 0, y: 40 }}
@@ -276,6 +282,7 @@ export default function LegacyWall() {
                   initial={{ y: -20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.2 }}
+                  id="legacy-wall-quote-title"
                   className="text-3xl sm:text-4xl md:text-5xl font-bold gold-gradient-text mb-4 sm:mb-6"
                 >
                   {selectedWord.word}
