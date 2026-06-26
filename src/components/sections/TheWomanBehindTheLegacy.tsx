@@ -20,10 +20,12 @@ export default function TheWomanBehindTheLegacy() {
           >
             <div className="relative">
               <div className="absolute -inset-4 bg-gradient-to-r from-gold/20 to-transparent rounded-lg blur-lg" />
-              <div className="relative bg-gray-200 rounded-lg overflow-hidden aspect-[3/4] image-placeholder">
-                <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
-                  <span>Portrait Image</span>
-                </div>
+              <div className="relative rounded-lg overflow-hidden aspect-[3/4] shadow-2xl">
+                <img
+                  src="/images/retirement/portrait.jpg"
+                  alt="Mrs. Molly Treasa Mammen"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
           </motion.div>

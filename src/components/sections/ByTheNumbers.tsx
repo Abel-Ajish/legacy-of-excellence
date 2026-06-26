@@ -12,9 +12,8 @@ interface Stat {
 const stats: Stat[] = [
   { number: 50, suffix: '', label: 'Years in Education' },
   { number: 35, suffix: '', label: 'Years at ASB' },
+  { number: 12, suffix: '', label: 'Years as Vice Principal' },
   { number: 14, suffix: '', label: 'Years as Principal' },
-  { number: 4600, suffix: '+', label: 'Students' },
-  { number: 43, suffix: '+', label: 'Years School History' },
 ];
 
 function AnimatedCounter({ number, suffix }: { number: number; suffix: string }) {
@@ -63,7 +62,7 @@ export default function ByTheNumbers() {
           By The <span className="gold-gradient-text">Numbers</span>
         </motion.h2>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 md:gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
           {stats.map((stat, index) => (
             <motion.div
               key={stat.label}
