@@ -22,7 +22,7 @@ const moments: Moment[] = [
   {
     title: 'Leadership Milestones',
     description: 'Celebrating key moments in Mrs. Mammen\'s leadership journey that shaped the school\'s trajectory.',
-    photo: '/images/awards/leaership.jpg',
+    photo: '/images/awards/leadership.jpg',
   },
 ];
 
