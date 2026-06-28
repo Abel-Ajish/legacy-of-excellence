@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMessages, addMessage, updateMessageStatus, deleteMessage } from '@/lib/firebase';
+import { sendWebhook } from '@/lib/webhook';
 
 export async function GET(req: NextRequest) {
   try {
@@ -32,6 +33,10 @@ export async function POST(req: NextRequest) {
     if (!result) {
       return NextResponse.json({ error: 'Failed to save message' }, { status: 500 });
     }
+
+    sendWebhook(result).catch((err) => {
+      console.error('[messages] Webhook notification failed:', err);
+    });
 
     return NextResponse.json(result, { status: 201 });
   } catch {
