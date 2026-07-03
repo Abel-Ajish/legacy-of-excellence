@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Message {
@@ -20,11 +20,15 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const fetchMessages = async () => {
+  const refreshMessages = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/messages');
+      const res = await fetch(`/api/messages?password=${encodeURIComponent(password)}`);
       const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed to load messages');
+        return;
+      }
       setMessages(data);
     } catch {
       setError('Failed to load messages');
@@ -33,14 +37,23 @@ export default function AdminPage() {
     }
   };
 
-  useEffect(() => {
-    if (authenticated) fetchMessages();
-  }, [authenticated]);
-
-  const handleAuth = (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.trim()) {
+    if (!password.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/messages?password=${encodeURIComponent(password)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Invalid password');
+        return;
+      }
       setAuthenticated(true);
+      setMessages(data);
+    } catch {
+      setError('Failed to load messages');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -143,7 +156,7 @@ export default function AdminPage() {
             Messages <span className="text-gold">({messages.length})</span>
           </h1>
           <button
-            onClick={fetchMessages}
+            onClick={refreshMessages}
             className="px-4 py-2 text-sm border border-gold/30 text-gold rounded-lg hover:bg-gold/10 transition-colors"
           >
             Refresh

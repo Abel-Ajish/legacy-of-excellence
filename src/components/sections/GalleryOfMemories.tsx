@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface GalleryImage {
   id: number;
@@ -24,7 +25,7 @@ const galleryImages: GalleryImage[] = [
   { id: 9, src: '/images/gallery/events-2.jpg', alt: 'Bahrain National Day Celebration', category: 'Events' },
   { id: 10, src: '/images/gallery/anniversary-2.jpg', alt: 'Anniversary performance', category: 'Anniversary' },
   { id: 11, src: '/images/gallery/academics-2.jpg', alt: 'Award Ceremony', category: 'Academics' },
-  { id: 12, src: '/images/gallery/teachers-2.jpg', alt: 'Teachers workshop', category: 'Teachers' },
+  { id: 12, src: '/images/gallery/teachers-2.jpg', alt: 'Teachers', category: 'Teachers' },
   { id: 13, src: '/images/gallery/leadership-3.jpg', alt: 'Group photo with chairman', category: 'Leadership' },
   { id: 14, src: '/images/gallery/leadership-4.jpg', alt: 'Guiding the school', category: 'Leadership' },
   { id: 15, src: '/images/gallery/students-3.jpg', alt: 'Basketball Team', category: 'Students' },
@@ -97,12 +98,13 @@ export default function GalleryOfMemories() {
                   className="relative group overflow-hidden rounded-xl cursor-pointer w-full"
                   aria-label={`View ${image.alt}`}
                 >
-                  <div className="aspect-[4/3] bg-gray-200 overflow-hidden">
-                    <img
+                  <div className="aspect-[4/3] bg-gray-200 overflow-hidden relative">
+                    <Image
                       src={image.src}
                       alt={image.alt}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      loading="lazy"
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-110"
                     />
                   </div>
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
@@ -153,10 +155,13 @@ export default function GalleryOfMemories() {
               </button>
               <div className="bg-gray-900 rounded-2xl overflow-hidden">
                 <div className="aspect-video bg-gray-800 relative overflow-hidden">
-                  <img
+                  <Image
                     src={lightboxImage.src}
                     alt={lightboxImage.alt}
-                    className="w-full h-full object-contain"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 768px"
+                    className="object-contain"
+                    priority
                   />
                 </div>
                 <div className="p-4 sm:p-6">

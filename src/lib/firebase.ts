@@ -11,27 +11,15 @@ export interface Message {
   createdAt: string;
 }
 
-function parseFirestoreDoc(doc: any): Message {
+function parseFirestoreDoc(doc: { name?: string; fields?: Record<string, { stringValue?: string }> }): Message {
   const fields = doc.fields || {};
   return {
     id: doc.name?.split('/').pop() || '',
     name: fields.name?.stringValue || '',
     message: fields.message?.stringValue || '',
     role: fields.role?.stringValue || '',
-    status: fields.status?.stringValue || 'pending',
+    status: (fields.status?.stringValue as Message['status']) || 'pending',
     createdAt: fields.createdAt?.stringValue || '',
-  };
-}
-
-function toFirestoreFields(msg: { name: string; message: string; role: string; status: string; createdAt: string }) {
-  return {
-    fields: {
-      name: { stringValue: msg.name },
-      message: { stringValue: msg.message },
-      role: { stringValue: msg.role },
-      status: { stringValue: msg.status },
-      createdAt: { stringValue: msg.createdAt },
-    },
   };
 }
 
@@ -91,19 +79,12 @@ export async function getMessageById(id: string): Promise<Message | null> {
 
 export async function updateMessageStatus(id: string, status: 'accepted' | 'rejected'): Promise<Message | null> {
   try {
-    // Get current document
-    const current = await getMessageById(id);
-    if (!current) return null;
-
-    // PUT the full document back with updated status
-    const url = `${FIRESTORE_BASE}/messages/${id}?key=${FIREBASE_API_KEY}`;
-    const doc = toFirestoreFields({
-      name: current.name,
-      message: current.message,
-      role: current.role,
-      status: status,
-      createdAt: current.createdAt,
-    });
+    const url = `${FIRESTORE_BASE}/messages/${id}?key=${FIREBASE_API_KEY}&updateMask.fieldPaths=status`;
+    const doc = {
+      fields: {
+        status: { stringValue: status },
+      },
+    };
 
     const res = await fetch(url, {
       method: 'PATCH',

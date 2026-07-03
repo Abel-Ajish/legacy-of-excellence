@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import GoldParticles from '../GoldParticles';
 
 export default function TheWomanBehindTheLegacy() {
@@ -21,10 +22,13 @@ export default function TheWomanBehindTheLegacy() {
             <div className="relative">
               <div className="absolute -inset-4 bg-gradient-to-r from-gold/20 to-transparent rounded-lg blur-lg" />
               <div className="relative rounded-lg overflow-hidden aspect-[3/4] shadow-2xl">
-                <img
+                <Image
                   src="/images/retirement/portrait.jpg"
                   alt="Mrs. Molly Treasa Mammen"
-                  className="w-full h-full object-cover"
+                  fill
+                  priority
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
                 />
               </div>
             </div>

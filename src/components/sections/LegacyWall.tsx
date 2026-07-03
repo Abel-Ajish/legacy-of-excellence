@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 
 interface LegacyWord {
   word: string;
@@ -84,8 +84,6 @@ function FloatingWord({ item, index, onSelect, isMobile }: { item: LegacyWord; i
     if (!visible || !ref.current) return;
     const el = ref.current;
     let animId: number;
-    let observer: IntersectionObserver;
-    let timer: ReturnType<typeof setTimeout>;
     let isAnimating = false;
     let isVisible = false;
     let startTime: number;
@@ -111,7 +109,7 @@ function FloatingWord({ item, index, onSelect, isMobile }: { item: LegacyWord; i
       animId = requestAnimationFrame(animate);
     }
 
-    observer = new IntersectionObserver(
+    const observer = new IntersectionObserver(
       ([entry]) => {
         isVisible = entry.isIntersecting;
         if (isVisible) {
@@ -125,7 +123,7 @@ function FloatingWord({ item, index, onSelect, isMobile }: { item: LegacyWord; i
     );
     observer.observe(el);
 
-    timer = setTimeout(() => {
+    const timer = setTimeout(() => {
       if (isVisible) startLoop();
     }, 1200);
 
@@ -170,7 +168,6 @@ function FloatingWord({ item, index, onSelect, isMobile }: { item: LegacyWord; i
 export default function LegacyWall() {
   const [selectedWord, setSelectedWord] = useState<LegacyWord | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [particles, setParticles] = useState<Array<{ x: number; size: number; delay: number; duration: number }>>([]);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -179,15 +176,14 @@ export default function LegacyWall() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  useEffect(() => {
+  const particles = useMemo(() => {
     const count = isMobile ? 20 : 40;
-    const p = Array.from({ length: count }, (_, i) => ({
+    return Array.from({ length: count }, (_, i) => ({
       x: (i * 31) % 100,
       size: 1 + (i % 4),
       delay: (i * 0.3) % 5,
       duration: 8 + (i % 6) * 2,
     }));
-    setParticles(p);
   }, [isMobile]);
 
   const wordsToShow = isMobile ? legacyWords.slice(0, 15) : legacyWords;

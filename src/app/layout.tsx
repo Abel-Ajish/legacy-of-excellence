@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   title: "A Legacy of Excellence - Mrs. Molly Treasa Mammen",
   description: "Celebrating 35 Years of Excellence at The Asian School Bahrain",
   keywords: ["tribute", "legacy", "education", "Bahrain", "CBSE"],
+  other: {
+    "image-src": "/images/retirement/portrait.jpg",
+  },
 };
 
 export default function RootLayout({
@@ -28,7 +31,11 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <link rel="preload" href="/images/retirement/portrait.jpg" as="image" />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }
+

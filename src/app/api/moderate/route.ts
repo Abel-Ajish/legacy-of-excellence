@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyModerationToken } from '@/lib/webhook';
 import { updateMessageStatus } from '@/lib/firebase';
 
+function escHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 export async function GET(req: NextRequest) {
   try {
     const id = req.nextUrl.searchParams.get('id');
@@ -71,7 +75,7 @@ export async function GET(req: NextRequest) {
   <div class="card">
     <div class="icon">${icon}</div>
     <h1>${label}</h1>
-    <p>Message from <strong>${updated.name}</strong> has been ${label.toLowerCase()}.</p>
+    <p>Message from <strong>${escHtml(updated.name)}</strong> has been ${label.toLowerCase()}.</p>
   </div>
 </body>
 </html>`,

@@ -31,7 +31,12 @@ export function verifyModerationToken(
       .update(payload)
       .digest('hex');
 
-    if (!crypto.timingSafeEqual(Buffer.from(receivedSig), Buffer.from(expectedSig))) {
+    const receivedBuf = Buffer.from(receivedSig);
+    const expectedBuf = Buffer.from(expectedSig);
+    if (receivedBuf.length !== expectedBuf.length) {
+      return { valid: false };
+    }
+    if (!crypto.timingSafeEqual(receivedBuf, expectedBuf)) {
       return { valid: false };
     }
 
@@ -51,46 +56,51 @@ export function verifyModerationToken(
 }
 
 export async function sendWebhook(message: Message): Promise<void> {
-  try {
-    if (!NTFY_URL || !WEBHOOK_SECRET || !BASE_URL) {
-      console.warn('[webhook] Missing NTFY_URL, WEBHOOK_SECRET, or BASE_URL — skipping notification');
-      return;
-    }
-
-    const acceptToken = generateModerationToken(message.id, 'accept');
-    const rejectToken = generateModerationToken(message.id, 'reject');
-
-    const acceptUrl = `${BASE_URL}/api/moderate?id=${encodeURIComponent(message.id)}&action=accept&token=${acceptToken}`;
-    const rejectUrl = `${BASE_URL}/api/moderate?id=${encodeURIComponent(message.id)}&action=reject&token=${rejectToken}`;
-
-    const body = [
-      `**New Message**`,
-      ``,
-      `**From:** ${message.name}`,
-      message.role ? `**Role:** ${message.role}` : '',
-      `**Message:** ${message.message}`,
-      ``,
-      `[Accept](${acceptUrl})`,
-      `[Reject](${rejectUrl})`,
-    ]
-      .filter(Boolean)
-      .join('\n');
-
-    const res = await fetch(NTFY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        topic: '0025f0b4bbca4fcb5caa18ea7e3084f5',
-        message: body,
-        markdown: true,
-        tags: ['message', 'inbox_tray'],
-      }),
-    });
-
-    if (!res.ok) {
-      console.error(`[webhook] ntfy.sh returned ${res.status}: ${res.statusText}`);
-    }
-  } catch (err) {
-    console.error('[webhook] Failed to send notification:', err);
+  if (!NTFY_URL || !WEBHOOK_SECRET || !BASE_URL) {
+    const missing = [];
+    if (!NTFY_URL) missing.push('NTFY_URL');
+    if (!WEBHOOK_SECRET) missing.push('WEBHOOK_SECRET');
+    if (!BASE_URL) missing.push('BASE_URL');
+    console.error(`[webhook] CRITICAL: Missing env vars: ${missing.join(', ')} — notification will NOT be sent`);
+    throw new Error(`Missing webhook config: ${missing.join(', ')}`);
   }
+
+  const acceptToken = generateModerationToken(message.id, 'accept');
+  const rejectToken = generateModerationToken(message.id, 'reject');
+
+  const acceptUrl = `${BASE_URL}/api/moderate?id=${encodeURIComponent(message.id)}&action=accept&token=${acceptToken}`;
+  const rejectUrl = `${BASE_URL}/api/moderate?id=${encodeURIComponent(message.id)}&action=reject&token=${rejectToken}`;
+
+  const body = [
+    `**New Message**`,
+    ``,
+    `**From:** ${message.name}`,
+    message.role ? `**Role:** ${message.role}` : '',
+    `**Message:** ${message.message}`,
+    ``,
+    `[Accept](${acceptUrl})`,
+    `[Reject](${rejectUrl})`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  console.log(`[webhook] Sending to ${NTFY_URL.split('/').slice(0, 3).join('/')}...`);
+
+  const res = await fetch(NTFY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: body,
+      markdown: true,
+      tags: ['message', 'inbox_tray'],
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => 'Could not read response');
+    console.error(`[webhook] ntfy.sh returned ${res.status}: ${res.statusText} — ${text}`);
+    throw new Error(`ntfy.sh returned ${res.status}: ${text}`);
+  }
+
+  console.log(`[webhook] Notification sent successfully for message from ${message.name}`);
 }

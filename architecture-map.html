@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architecture Map — legacy-site</title>
+<style>
+:root {
+  --bg: #0F0F0F;
+  --panel: #161616;
+  --panel-2: #1c1c1c;
+  --border: #2a2a2a;
+  --text: #e8e8e8;
+  --muted: #8a8a8a;
+  --client: #4ea1ff;
+  --route: #7bd389;
+  --service: #c792ea;
+  --db: #ffb86b;
+  --external: #ff6b9d;
+  --critical: #ff3860;
+  --accent: #f5b942;
+  --accent-2: #ff7a45;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; overflow: hidden; height: 100vh; }
+#toolbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: var(--panel); border-bottom: 1px solid var(--border); padding: 8px 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.chip { padding: 4px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--panel-2); color: var(--muted); transition: all 0.2s; user-select: none; }
+.chip:hover { border-color: var(--accent); color: var(--text); }
+.chip.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+.chip-critical { border-color: var(--critical); }
+.chip-critical.active { background: var(--critical); border-color: var(--critical); }
+#controls { position: fixed; bottom: 16px; right: 16px; z-index: 100; display: flex; gap: 6px; }
+#controls button { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+#controls button:hover { background: var(--panel-2); border-color: var(--accent); }
+#canvas-wrap { position: absolute; top: 48px; left: 0; right: 320px; bottom: 0; overflow: hidden; cursor: grab; }
+#canvas-wrap.grabbing { cursor: grabbing; }
+#canvas { transform-origin: 0 0; }
+#sidebar { position: fixed; top: 48px; right: 0; bottom: 0; width: 320px; background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto; padding: 20px; font-size: 13px; line-height: 1.5; }
+#sidebar h3 { font-size: 15px; margin-bottom: 6px; color: var(--text); }
+#sidebar .path { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 11px; color: var(--accent); background: var(--panel-2); padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 10px; word-break: break-all; }
+#sidebar .role { color: var(--text); margin-bottom: 4px; }
+#sidebar .plain { color: var(--muted); margin-bottom: 10px; font-size: 12px; }
+#sidebar .notes { list-style: none; padding: 0; margin-bottom: 12px; }
+#sidebar .notes li { padding: 3px 0; color: var(--muted); font-size: 12px; }
+#sidebar .notes li::before { content: '→ '; color: var(--accent); }
+#sidebar .edge-list { margin-bottom: 12px; }
+#sidebar .edge-item { font-size: 11px; padding: 3px 0; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.edge-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+#sidebar .findings { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+#sidebar .findings h4 { font-size: 13px; color: var(--accent); margin-bottom: 8px; }
+#sidebar .findings p, #sidebar .findings li { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+#sidebar .findings ul { padding-left: 14px; }
+.badge { position: absolute; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.badge-fix { background: #16a34a; color: #fff; top: -4px; right: -4px; }
+.badge-bug { background: var(--critical); color: #fff; top: -4px; right: -4px; }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <span style="font-weight:600;color:var(--accent);margin-right:8px;font-size:13px;">Architecture Map</span>
+</div>
+
+<div id="canvas-wrap">
+  <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+
+<div id="controls">
+  <button id="btn-fit" title="Fit to view">Fit</button>
+  <button id="btn-in" title="Zoom in">+</button>
+  <button id="btn-out" title="Zoom out">−</button>
+</div>
+
+<div id="sidebar">
+  <div id="sidebar-content"></div>
+</div>
+
+<script>
+const clusters = [
+  { id: 'entry',   label: 'Entry',          x: 30,   y: 30,  w: 260, h: 380, color: '--client' },
+  { id: 'ui',      label: 'UI Sections',     x: 340,  y: 30,  w: 260, h: 1220, color: '--route' },
+  { id: 'api',     label: 'API Routes',      x: 650,  y: 30,  w: 260, h: 300, color: '--route' },
+  { id: 'services',label: 'Services',        x: 960,  y: 30,  w: 260, h: 300, color: '--service' },
+  { id: 'external',label: 'External APIs',   x: 1270, y: 30,  w: 260, h: 300, color: '--external' },
+];
+
+const N = (id, cluster, label, sub, x, y, w, h, color, opts = {}) => ({
+  id, cluster, label, sub, x, y, w, h, color, ...opts
+});
+
+const nodes = [
+  // Entry cluster
+  N('layout', 'entry', 'layout.tsx', 'Root Layout', 50, 60, 220, 48, 'client', {
+    role: 'Root layout: loads Geist fonts, sets metadata, wraps children, preloads critical images.',
+    plain: 'The wrapper every page goes through. Sets the page title, description, loads the font, and preloads the portrait image for faster loading.',
+    path: 'src/app/layout.tsx:1',
+    notes: ['line:15-22, Metadata sets title + image-src', 'line:34-36, preloads portrait.jpg for faster loading', 'line:24-40, RootLayout renders <html> + <body>'],
+    tag: ['overview', 'all'],
+  }),
+  N('home', 'entry', 'page.tsx', 'Home Page (main)', 50, 130, 220, 48, 'client', {
+    role: 'Home page: assembles all tribute sections in order inside SmoothScrollProvider.',
+    plain: 'The main page visitors see. It stacks all the tribute sections from top to bottom — hero, biography, timeline, gallery, messages, and more.',
+    path: 'src/app/page.tsx:16',
+    notes: ['line:1, "use client" directive', 'line:3-14, imports 11 section components + MessageForm', 'line:16-46, wraps everything in SmoothScrollProvider'],
+    tag: ['overview', 'all'],
+    critical: true,
+  }),
+  N('messages-page', 'entry', 'messages/page.tsx', 'Messages Page', 50, 200, 220, 48, 'client', {
+    role: 'Standalone page listing all accepted messages with pagination and a MessageForm.',
+    plain: 'A separate page that shows all approved tribute messages in a grid. Visitors can scroll through them or load more.',
+    path: 'src/app/messages/page.tsx:17',
+    notes: ['line:15, 12 messages per page', 'line:22-36, fetches GET /api/messages?status=accepted', 'line:139-141, embeds MessageForm at bottom'],
+    tag: ['overview', 'messages', 'all'],
+  }),
+  N('admin-page', 'entry', 'admin/page.tsx', 'Admin Panel', 50, 270, 220, 48, 'client', {
+    role: 'Password-protected admin panel for moderating messages (accept/reject/delete).',
+    plain: 'A secret admin page where a moderator reviews pending messages and approves or rejects them. Protected by a password.',
+    path: 'src/app/admin/page.tsx:15',
+    notes: ['line:40-45, client-side auth gate (password check)', 'line:47-79, handleStatus sends PATCH /api/messages', 'line:81-101, handleDelete sends DELETE /api/messages'],
+    tag: ['overview', 'messages', 'admin', 'all'],
+  }),
+
+  // UI cluster — shared
+  N('smooth-scroll', 'ui', 'SmoothScrollProvider.tsx', 'Smooth Scroll Wrapper', 360, 60, 220, 48, 'route', {
+    role: 'Wraps children with Lenis for buttery-smooth vertical scrolling.',
+    plain: 'A wrapper that makes the whole page scroll smoothly instead of jumping. Uses a library called Lenis.',
+    path: 'src/components/SmoothScrollProvider.tsx:6',
+    notes: ['line:4, imports Lenis library', 'line:14-24, Lenis config: duration 1.0, smoothWheel true', 'line:28-33, requestAnimationFrame loop'],
+    tag: ['overview', 'all'],
+  }),
+  N('gold-particles', 'ui', 'GoldParticles.tsx', 'Canvas Particle Effect', 360, 130, 220, 48, 'route', {
+    role: 'Renders floating gold particles on a <canvas> element using requestAnimationFrame.',
+    plain: 'Creates a subtle effect of tiny gold dots floating upward. Decorative, adds visual polish to the biography section.',
+    path: 'src/components/GoldParticles.tsx:5',
+    notes: ['line:30, 50 particles', 'line:43-66, animation loop with ResizeObserver', 'line:89, canvas overlays parent with pointer-events:none'],
+    tag: ['overview', 'all'],
+  }),
+
+  // UI cluster — sections
+  N('landing', 'ui', 'LandingScreen.tsx', 'Hero / Landing', 360, 200, 220, 48, 'route', {
+    role: 'Full-viewport hero section with parallax scroll, title, name, and date range.',
+    plain: 'The big opening screen with "A Legacy of Excellence" and Mrs. Mammen\'s name. It fades and scales as you scroll down.',
+    path: 'src/components/sections/LandingScreen.tsx:6',
+    notes: ['line:32, h-[100dvh] full viewport', 'line:12-29, scroll-driven parallax (opacity + scale)', 'line:80-86, 1992 — 2026 date display'],
+    tag: ['overview', 'all'],
+  }),
+  N('woman', 'ui', 'TheWomanBehindTheLegacy.tsx', 'Biography Section', 360, 270, 220, 48, 'route', {
+    role: 'Side-by-side portrait + biography text with GoldParticles overlay.',
+    plain: 'A section showing Mrs. Mammen\'s photo next to her life story — where she was born, her education, and her career milestones.',
+    path: 'src/components/sections/TheWomanBehindTheLegacy.tsx:6',
+    notes: ['line:4, imports GoldParticles', 'line:24-30, portrait uses next/image with priority for fast loading', 'line:46-67, biography paragraphs'],
+    tag: ['overview', 'all'],
+  }),
+  N('journey', 'ui', 'JourneyThroughTime.tsx', 'Timeline Section', 360, 340, 220, 48, 'route', {
+    role: 'Interactive timeline with 7 career milestones and click-to-expand modal.',
+    plain: 'A visual timeline showing key moments from 1987 to 2026. Clicking any milestone opens a popup with more details and a photo.',
+    path: 'src/components/sections/JourneyThroughTime.tsx:23',
+    notes: ['line:13-21, 7 timeline events hardcoded', 'line:102-149, modal with AnimatePresence', 'line:40-44, mobile vs desktop layout split'],
+    tag: ['overview', 'all'],
+  }),
+  N('numbers', 'ui', 'ByTheNumbers.tsx', 'Stats Section', 360, 410, 220, 48, 'route', {
+    role: 'Animated counter section showing 4 key statistics with number rollup.',
+    plain: 'Four big numbers that count up when they scroll into view: 50 years in education, 35 at ASB, 12 as VP, 14 as Principal.',
+    path: 'src/components/sections/ByTheNumbers.tsx:19',
+    notes: ['line:12-17, 4 stats hardcoded', 'line:19-50, AnimatedCounter with setInterval', 'line:22, useInView triggers animation'],
+    tag: ['overview', 'all'],
+  }),
+  N('school', 'ui', 'TheSchoolSheHelpedShape.tsx', 'Campus Parallax Slides', 360, 480, 220, 48, 'route', {
+    role: '5 full-width parallax slides about the school\'s history and growth.',
+    plain: 'A series of full-screen sections with parallax background images telling the school\'s story from 1983 to today.',
+    path: 'src/components/sections/TheSchoolSheHelpedShape.tsx:34',
+    notes: ['line:11-32, 5 slides with hardcoded photo paths', 'line:34-83, ParallaxSlide component using useScroll', 'line:41, opacity + y transform from scroll progress'],
+    tag: ['overview', 'all'],
+  }),
+  N('gallery', 'ui', 'GalleryOfMemories.tsx', 'Photo Gallery', 360, 550, 220, 48, 'route', {
+    role: 'Filterable photo gallery with 19 images and lightbox modal.',
+    plain: 'A grid of photos organized by category (Leadership, Students, Events, etc.). Click any photo to see it larger in a lightbox.',
+    path: 'src/components/sections/GalleryOfMemories.tsx:37',
+    notes: ['line:13, 7 categories', 'line:15-35, 19 images hardcoded', 'line:100-107, images use next/image with lazy loading', 'line:154-161, lightbox uses next/image with priority'],
+    tag: ['overview', 'gallery', 'all'],
+  }),
+  N('moments', 'ui', 'MomentsOfImpact.tsx', 'Award Highlights', 360, 620, 220, 48, 'route', {
+    role: 'Showcase of 3 key moments: anniversary, academics, and leadership.',
+    plain: 'Three feature blocks highlighting the most important events — the 40th anniversary, academic awards, and leadership milestones.',
+    path: 'src/components/sections/MomentsOfImpact.tsx:29',
+    notes: ['line:11-27, 3 moments hardcoded', 'line:57-65, images use next/image with lazy loading', 'line:42-89, responsive layout with parallax hover'],
+    tag: ['overview', 'all'],
+  }),
+  N('voices', 'ui', 'VoicesOfGratitude.tsx', 'Testimonials Feed', 360, 690, 220, 48, 'route', {
+    role: 'Displays 6 random accepted messages as testimonials with a "View All" link.',
+    plain: 'Shows a handful of tribute messages from visitors. Picks 6 at random each time the page loads. Links to the full messages page.',
+    path: 'src/components/sections/VoicesOfGratitude.tsx:13',
+    notes: ['line:16-30, fetches GET /api/messages?status=accepted', 'line:21, shuffles randomly, takes 6', 'line:104-109, "View All Messages" link to /messages'],
+    tag: ['overview', 'messages', 'all'],
+  }),
+  N('message-form', 'ui', 'MessageForm.tsx', 'Message Submission Form', 360, 760, 220, 48, 'route', {
+    role: 'Form for visitors to submit tribute messages (name, role, message) via POST /api/messages.',
+    plain: 'A form where visitors type their name, optional role, and a tribute message, then submit it. Shows a thank-you on success.',
+    path: 'src/components/MessageForm.tsx:6',
+    notes: ['line:14-39, handleSubmit POSTs to /api/messages', 'line:25-29, sends name, message, role as JSON', 'line:129, 500 character limit displayed'],
+    tag: ['overview', 'messages', 'all'],
+    critical: true,
+  }),
+  N('legacy-wall', 'ui', 'LegacyWall.tsx', 'Floating Word Wall', 360, 830, 220, 48, 'route', {
+    role: '28 floating words with quotes in an animated, interactive wall.',
+    plain: 'A wall of floating words like "Leadership", "Kindness", "Excellence" that drift around. Hovering makes them glow, clicking shows a quote.',
+    path: 'src/components/sections/LegacyWall.tsx:170',
+    notes: ['line:11-40, 28 legacy words with quotes', 'line:74-168, FloatingWord component with requestAnimationFrame', 'line:42-72, pre-computed positions to avoid hydration mismatch'],
+    tag: ['overview', 'all'],
+  }),
+  N('thank-you', 'ui', 'ThankYouSection.tsx', 'Closing Section', 360, 900, 220, 48, 'route', {
+    role: 'Scroll-reveal closing section with "Thank You" and date range.',
+    plain: 'The big "Thank You" message at the bottom of the page. Fades in and scales up as you scroll into it.',
+    path: 'src/components/sections/ThankYouSection.tsx:6',
+    notes: ['line:8-15, scroll-driven opacity + scale', 'line:32, "Thank You" in huge text', 'line:55-58, "For 35 Years, For Every Student..."'],
+    tag: ['overview', 'all'],
+  }),
+  N('farewell', 'ui', 'FarewellLetter.tsx', 'DEAD — zero callers', 360, 980, 220, 48, 'route', {
+    role: 'Farewell letter component — exported but never imported by any page.',
+    plain: 'A nicely formatted farewell letter from Mrs. Mammen. This component exists but is never used anywhere in the app — it\'s dead code.',
+    path: 'src/components/sections/FarewellLetter.tsx:5',
+    notes: ['line:5, export default FarewellLetter', 'DEAD: no imports found in any page or component', 'Could be wired into page.tsx or messages/page.tsx'],
+    tag: ['messages', 'all'],
+  }),
+
+  // API Routes
+  N('api-messages', 'api', 'messages/route.ts', 'Messages CRUD', 670, 60, 220, 48, 'route', {
+    role: 'Handles GET, POST, PATCH, DELETE for messages. POST triggers webhook notification.',
+    plain: 'The main API endpoint for messages. Visitors submit via POST, admins moderate via PATCH/DELETE. Every new message triggers a push notification.',
+    path: 'src/app/api/messages/route.ts:5',
+    notes: ['line:6-13, GET fetches all messages (optional status filter)', 'line:25-54, POST validates + saves + sends webhook', 'line:57-83, PATCH requires ADMIN_PASSWORD (timing-safe compare FIXED)', 'line:85-107, DELETE requires ADMIN_PASSWORD (timing-safe compare FIXED)'],
+    tag: ['overview', 'messages', 'all'],
+    critical: true,
+  }),
+  N('api-moderate', 'api', 'moderate/route.ts', 'Token-based Moderation', 670, 160, 220, 48, 'route', {
+    role: 'Accepts GET with token to approve/reject messages via email links.',
+    plain: 'An endpoint that handles the "Accept" or "Reject" buttons from email notifications. Uses a cryptographic token to verify the link is legitimate and hasn\'t expired.',
+    path: 'src/app/api/moderate/route.ts:5',
+    notes: ['line:5-91, GET handler returns HTML response', 'line:29, verifyModerationToken checks HMAC signature', 'line:46, updateMessageStatus sets accepted/rejected', 'line:78, XSS fixed: updated.name escaped with escHtml()'],
+    tag: ['overview', 'messages', 'admin', 'all'],
+    critical: true,
+  }),
+
+  // Services
+  N('firebase', 'services', 'firebase.ts', 'Firestore REST Client', 980, 60, 220, 48, 'service', {
+    role: 'Direct Firestore REST API client — CRUD for messages collection using env-based auth.',
+    plain: 'The database layer. Talks directly to Firebase Firestore over HTTP to save, read, update, and delete messages. Uses API keys from environment variables.',
+    path: 'src/lib/firebase.ts:1',
+    notes: ['line:1-3, FIREBASE_PROJECT_ID + FIREBASE_API_KEY from env', 'line:33-48, getMessages fetches all docs from messages collection', 'line:50-73, addMessage creates with status "pending"', 'line:78-98, updateMessageStatus uses atomic PATCH with updateMask (FIXED)'],
+    tag: ['overview', 'messages', 'all'],
+    critical: true,
+  }),
+  N('webhook', 'services', 'webhook.ts', 'Notification + Token System', 980, 180, 220, 48, 'service', {
+    role: 'Sends ntfy.sh notifications for new messages and generates HMAC-signed moderation tokens.',
+    plain: 'When a new message arrives, this sends a push notification with "Accept" and "Reject" links. The links contain cryptographic tokens that prove they came from you.',
+    path: 'src/lib/webhook.ts:1',
+    notes: ['line:8-15, generateModerationToken creates HMAC-SHA256 signed token', 'line:17-51, verifyModerationToken checks signature + 10-min expiry', 'line:34-41, timingSafeEqual with length check (FIXED)', 'line:78-87, sendWebhook POSTs to ntfy.sh (topic removed from body, in URL)'],
+    tag: ['overview', 'messages', 'admin', 'all'],
+    critical: true,
+  }),
+
+  // External
+  N('firestore-ext', 'external', 'Firebase Firestore', 'Cloud Database', 1290, 60, 220, 48, 'external', {
+    role: 'Google Cloud Firestore — stores messages collection with status workflow.',
+    plain: 'A cloud database from Google where all visitor messages are stored. Messages start as "pending" and move to "accepted" or "rejected" after moderation.',
+    path: 'firestore.googleapis.com (REST API)',
+    notes: ['Collection: messages', 'Fields: name, message, role, status, createdAt', 'Auth: Firebase API key via query param', 'Note: No admin SDK — uses raw REST'],
+    tag: ['overview', 'messages', 'all'],
+  }),
+  N('ntfy-ext', 'external', 'ntfy.sh', 'Push Notifications', 1290, 180, 220, 48, 'external', {
+    role: 'Self-hosted or hosted ntfy.sh — sends push notifications with moderation links.',
+    plain: 'A simple push notification service. When someone submits a message, it sends a notification to the admin\'s phone with links to accept or reject the message.',
+    path: 'ntfy.sh (HTTP POST)',
+    notes: ['Topic: hardcoded UUID (line 83 of webhook.ts)', 'Markdown-enabled messages', 'Tags: message, inbox_tray', 'Env: NTFY_URL, WEBHOOK_SECRET, BASE_URL'],
+    tag: ['overview', 'messages', 'admin', 'all'],
+  }),
+];
+
+const edges = [
+  // Critical path: home → sections → messageForm → API → firebase → firestore
+  { from: 'home', to: 'smooth-scroll', kind: 'mount', label: 'wraps children', tag: ['overview', 'all'] },
+  { from: 'home', to: 'landing', kind: 'critical', label: '1 · <LandingScreen />', tag: ['overview', 'all'] },
+  { from: 'home', to: 'woman', kind: 'normal', label: '2 · <TheWomanBehindTheLegacy />', tag: ['overview', 'all'] },
+  { from: 'home', to: 'journey', kind: 'normal', label: '3 · <JourneyThroughTime />', tag: ['overview', 'all'] },
+  { from: 'home', to: 'numbers', kind: 'normal', label: '4 · <ByTheNumbers />', tag: ['overview', 'all'] },
+  { from: 'home', to: 'school', kind: 'normal', label: '5 · <TheSchoolSheHelpedShape />', tag: ['overview', 'all'] },
+  { from: 'home', to: 'gallery', kind: 'normal', label: '6 · <GalleryOfMemories />', tag: ['overview', 'gallery'] },
+  { from: 'home', to: 'moments', kind: 'normal', label: '7 · <MomentsOfImpact />', tag: ['overview', 'all'] },
+  { from: 'home', to: 'voices', kind: 'critical', label: '8 · <VoicesOfGratitude />', tag: ['overview', 'messages'] },
+  { from: 'home', to: 'message-form', kind: 'critical', label: '9 · <MessageForm />', tag: ['overview', 'messages'] },
+  { from: 'home', to: 'legacy-wall', kind: 'normal', label: '10 · <LegacyWall />', tag: ['overview', 'all'] },
+  { from: 'home', to: 'thank-you', kind: 'normal', label: '11 · <ThankYouSection />', tag: ['overview', 'all'] },
+
+  // VoicesOfGratitude fetches from API
+  { from: 'voices', to: 'api-messages', kind: 'api', label: 'GET /api/messages?status=accepted', tag: ['messages', 'all'] },
+
+  // MessageForm critical path → API
+  { from: 'message-form', to: 'api-messages', kind: 'critical', label: 'POST /api/messages {name, message, role}', tag: ['messages', 'all'] },
+
+  // API → Services
+  { from: 'api-messages', to: 'firebase', kind: 'critical', label: 'addMessage() → Firestore POST', tag: ['messages', 'all'] },
+  { from: 'api-messages', to: 'webhook', kind: 'critical', label: 'sendWebhook(result)', tag: ['messages', 'all'] },
+  { from: 'api-moderate', to: 'firebase', kind: 'db', label: 'updateMessageStatus(id, status)', tag: ['messages', 'admin'] },
+  { from: 'api-moderate', to: 'webhook', kind: 'normal', label: 'verifyModerationToken()', tag: ['messages', 'admin'] },
+
+  // Services → External
+  { from: 'firebase', to: 'firestore-ext', kind: 'db', label: 'REST API · messages collection', tag: ['messages', 'all'] },
+  { from: 'webhook', to: 'ntfy-ext', kind: 'api', label: 'POST · push notification', tag: ['messages', 'admin'] },
+
+  // Admin page flow
+  { from: 'admin-page', to: 'api-messages', kind: 'api', label: 'GET / PATCH / DELETE', tag: ['messages', 'admin'] },
+  { from: 'messages-page', to: 'api-messages', kind: 'api', label: 'GET /api/messages?status=accepted', tag: ['messages', 'all'] },
+  { from: 'messages-page', to: 'message-form', kind: 'mount', label: 'embeds <MessageForm />', tag: ['messages', 'all'] },
+
+  // GoldParticles used by TheWomanBehindTheLegacy
+  { from: 'woman', to: 'gold-particles', kind: 'mount', label: 'renders <GoldParticles />', tag: ['overview', 'all'] },
+
+  // Email → moderate route (external trigger)
+  { from: 'ntfy-ext', to: 'api-moderate', kind: 'api', label: 'click Accept/Reject link → GET', tag: ['messages', 'admin'] },
+];
+
+const FIXES = {
+  'firebase': [{n: 1, t: 'Race condition fixed: updateMessageStatus now uses atomic PATCH with updateMask'}],
+  'webhook': [{n: 1, t: 'timingSafeEqual now checks buffer lengths before comparison'}, {n: 2, t: 'Removed hardcoded topic from JSON body (already in NTFY_URL)'}],
+  'api-messages': [{n: 1, t: 'Password comparison now uses crypto.timingSafeEqual'}],
+  'api-moderate': [{n: 1, t: 'XSS fixed: updated.name now escaped with escHtml()'}],
+  'woman': [{n: 1, t: 'Portrait image now uses next/image with priority for faster loading'}],
+};
+const KNOWN_BUGS = {};
+
+// ── Rendering ──
+const svg = document.getElementById('canvas');
+const wrap = document.getElementById('canvas-wrap');
+const sidebarContent = document.getElementById('sidebar-content');
+let tx = 0, ty = 0, scale = 1;
+let activeTag = 'overview';
+let selectedNode = null;
+let isPanning = false, panStart = {x:0, y:0};
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function buildSVG() {
+  const W = 1590, H = 1260;
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = '';
+
+  // Defs
+  const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+  defs.innerHTML = `
+    <marker id="arrow-normal" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="var(--muted)" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-critical" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="var(--critical)" stroke-width="1.2"/>
+    </marker>
+    <marker id="arrow-api" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="var(--accent-2)" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-db" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="var(--db)" stroke-width="1"/>
+    </marker>
+    <marker id="arrow-mount" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#5cc8ff" stroke-width="1"/>
+    </marker>
+  `;
+  svg.appendChild(defs);
+
+  // Clusters
+  clusters.forEach(c => {
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('data-cluster', c.id);
+    const col = getComputedStyle(document.documentElement).getPropertyValue(c.color).trim();
+    g.innerHTML = `
+      <rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" rx="12" fill="none" stroke="${col}" stroke-opacity="0.15" stroke-width="1"/>
+      <text x="${c.x + 12}" y="${c.y + 20}" fill="${col}" fill-opacity="0.5" font-size="11" font-weight="600">${esc(c.label)}</text>
+    `;
+    svg.appendChild(g);
+  });
+
+  // Edges
+  const nodeMap = {};
+  nodes.forEach(n => nodeMap[n.id] = n);
+
+  edges.forEach((e, i) => {
+    const from = nodeMap[e.from], to = nodeMap[e.to];
+    if (!from || !to) return;
+    const x1 = from.x + from.w, y1 = from.y + from.h / 2;
+    const x2 = to.x, y2 = to.y + to.h / 2;
+    const cx1 = x1 + (x2 - x1) * 0.4;
+    const cx2 = x2 - (x2 - x1) * 0.4;
+    const color = e.kind === 'critical' ? 'var(--critical)' :
+                  e.kind === 'api' ? 'var(--accent-2)' :
+                  e.kind === 'db' ? 'var(--db)' :
+                  e.kind === 'mount' ? '#5cc8ff' : 'var(--muted)';
+    const opacity = e.kind === 'critical' ? 0.8 : 0.35;
+    const strokeW = e.kind === 'critical' ? 1.8 : 1;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg','g');
+    path.setAttribute('data-edge', `${e.from}-${e.to}`);
+    path.setAttribute('data-tag', e.tag.join(','));
+    path.innerHTML = `
+      <path d="M${x1} ${y1} C${cx1} ${y1}, ${cx2} ${y2}, ${x2} ${y2}"
+        fill="none" stroke="${color}" stroke-opacity="${opacity}" stroke-width="${strokeW}"
+        marker-end="url(#arrow-${e.kind})"/>
+    `;
+    // Label
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2 - 6;
+    const labelG = document.createElementNS('http://www.w3.org/2000/svg','g');
+    labelG.setAttribute('data-edge-label', `${e.from}-${e.to}`);
+    labelG.setAttribute('data-tag', e.tag.join(','));
+    const labelBg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    const labelText = document.createElementNS('http://www.w3.org/2000/svg','text');
+    labelText.textContent = e.label;
+    labelText.setAttribute('x', mx);
+    labelText.setAttribute('y', my + 3);
+    labelText.setAttribute('text-anchor', 'middle');
+    labelText.setAttribute('fill', color);
+    labelText.setAttribute('fill-opacity', '0.7');
+    labelText.setAttribute('font-size', '8');
+    labelText.setAttribute('font-family', "'Cascadia Code','Fira Code',monospace");
+    const bbox = { w: e.label.length * 4.5 + 8, h: 14 };
+    labelBg.setAttribute('x', mx - bbox.w / 2);
+    labelBg.setAttribute('y', my - 8);
+    labelBg.setAttribute('width', bbox.w);
+    labelBg.setAttribute('height', bbox.h);
+    labelBg.setAttribute('rx', 3);
+    labelBg.setAttribute('fill', 'var(--bg)');
+    labelBg.setAttribute('fill-opacity', '0.85');
+    labelG.appendChild(labelBg);
+    labelG.appendChild(labelText);
+    svg.appendChild(path);
+    svg.appendChild(labelG);
+  });
+
+  // Nodes
+  nodes.forEach(n => {
+    const col = getComputedStyle(document.documentElement).getPropertyValue(n.color).trim();
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('data-node', n.id);
+    g.setAttribute('data-tag', n.tag.join(','));
+    g.style.cursor = 'pointer';
+
+    const strokeW = n.critical ? 2.2 : 1.2;
+    const isDead = n.sub && n.sub.includes('DEAD');
+
+    let badgeHTML = '';
+    if (FIXES[n.id]) badgeHTML += `<circle cx="${n.x + n.w - 6}" cy="${n.y + 6}" r="8" fill="#16a34a"/><text x="${n.x + n.w - 6}" y="${n.y + 10}" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">${FIXES[n.id].length}</text>`;
+    if (KNOWN_BUGS[n.id]) badgeHTML += `<circle cx="${n.x + n.w - 6}" cy="${n.y + (FIXES[n.id] ? 20 : 6)}" r="8" fill="var(--critical)"/><text x="${n.x + n.w - 6}" y="${n.y + (FIXES[n.id] ? 24 : 10)}" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">${KNOWN_BUGS[n.id].length}</text>`;
+
+    g.innerHTML = `
+      <rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="8"
+        fill="var(--panel-2)" stroke="${isDead ? '#666' : col}" stroke-width="${strokeW}"
+        stroke-opacity="${isDead ? 0.4 : 1}"/>
+      <text x="${n.x + 10}" y="${n.y + 17}" fill="${isDead ? '#888' : col}" font-size="11" font-weight="600">${esc(n.label)}</text>
+      <text x="${n.x + 10}" y="${n.y + 33}" fill="${isDead ? '#666' : 'var(--muted)'}" font-size="9">${esc(n.sub)}</text>
+      ${badgeHTML}
+    `;
+    g.addEventListener('mouseenter', () => selectNode(n.id));
+    g.addEventListener('click', () => selectNode(n.id));
+    svg.appendChild(g);
+  });
+}
+
+function selectNode(id) {
+  selectedNode = id;
+  const n = nodes.find(x => x.id === id);
+  if (!n) return;
+
+  // Dim unconnected
+  const connected = new Set([id]);
+  edges.forEach(e => {
+    if (e.from === id) connected.add(e.to);
+    if (e.to === id) connected.add(e.from);
+  });
+
+  svg.querySelectorAll('[data-node]').forEach(g => {
+    const nid = g.getAttribute('data-node');
+    g.style.opacity = connected.has(nid) ? '1' : '0.15';
+  });
+  svg.querySelectorAll('[data-edge]').forEach(g => {
+    const tags = g.getAttribute('data-tag');
+    g.style.opacity = '1';
+  });
+  svg.querySelectorAll('[data-edge-label]').forEach(g => {
+    g.style.opacity = '0.3';
+  });
+  // Show labels for connected edges
+  edges.forEach(e => {
+    if (e.from === id || e.to === id) {
+      const lbl = svg.querySelector(`[data-edge-label="${e.from}-${e.to}"]`);
+      if (lbl) lbl.style.opacity = '1';
+    }
+  });
+
+  showSidebar(n);
+}
+
+function clearSelection() {
+  selectedNode = null;
+  svg.querySelectorAll('[data-node]').forEach(g => g.style.opacity = '1');
+  svg.querySelectorAll('[data-edge]').forEach(g => {
+    const tags = g.getAttribute('data-tag');
+    g.style.opacity = tags.includes(activeTag) ? '1' : '0.06';
+  });
+  svg.querySelectorAll('[data-edge-label]').forEach(g => {
+    const tags = g.getAttribute('data-tag');
+    g.style.opacity = tags.includes(activeTag) ? '0.7' : '0.06';
+  });
+  showSidebar(null);
+}
+
+function showSidebar(n) {
+  if (!n) {
+    // Default view with notable findings
+    sidebarContent.innerHTML = `
+      <h3>Legacy Site — Architecture Overview</h3>
+      <p class="role" style="margin-top:8px;">Next.js 16 tribute website for Mrs. Molly Treasa Mammen</p>
+      <p class="plain" style="margin-top:8px;">A single-page memorial site with a message submission system, admin moderation panel, and push notifications for new messages.</p>
+      <div class="findings">
+        <h4>Fixes Applied</h4>
+        <ul>
+          <li><strong>Race condition fixed:</strong> updateMessageStatus now uses atomic PATCH with updateMask.</li>
+          <li><strong>Timing-safe password:</strong> Admin password comparison uses crypto.timingSafeEqual.</li>
+          <li><strong>XSS fixed:</strong> moderate/route.ts now escapes user input in HTML responses.</li>
+          <li><strong>timingSafeEqual:</strong> Buffer length check added before comparison.</li>
+          <li><strong>Image optimization:</strong> Portrait uses next/image with priority for faster loading.</li>
+        </ul>
+      </div>
+      <div class="findings" style="margin-top:16px;">
+        <h4>Remaining Notes</h4>
+        <ul>
+          <li><strong>Dead code:</strong> FarewellLetter.tsx is exported but never imported.</li>
+          <li><strong>Unused dependency:</strong> gsap is in package.json but never imported.</li>
+          <li><strong>No Firebase Admin SDK:</strong> Uses raw REST API with API key.</li>
+        </ul>
+      </div>
+      <div class="findings" style="margin-top:16px;">
+        <h4>Critical Path</h4>
+        <p style="color:var(--critical);">home → MessageForm → POST /api/messages → firebase.addMessage() → Firestore → webhook.sendWebhook() → ntfy.sh</p>
+      </div>
+      <div class="findings" style="margin-top:16px;">
+        <h4>Filter chips</h4>
+        <p>Use the chips at the top to filter by feature. "Critical Path" highlights the message submission flow.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const incoming = edges.filter(e => e.to === n.id);
+  const outgoing = edges.filter(e => e.from === n.id);
+
+  const colorVar = n.color;
+  const colorHex = getComputedStyle(document.documentElement).getPropertyValue(colorVar).trim();
+
+  let notesHTML = (n.notes || []).map(ni => `<li>${esc(ni)}</li>`).join('');
+
+  let fixesHTML = '';
+  if (FIXES[n.id]) {
+    fixesHTML = `<div class="findings"><h4>Fixes</h4><ul>${FIXES[n.id].map(f => `<li>#${f.n}: ${esc(f.t)}</li>`).join('')}</ul></div>`;
+  }
+  let bugsHTML = '';
+  if (KNOWN_BUGS[n.id]) {
+    bugsHTML = `<div class="findings"><h4 style="color:var(--critical)">Known Bugs</h4><ul>${KNOWN_BUGS[n.id].map(b => `<li>[${b.sev}] ${b.ref ? b.ref + ': ' : ''}${esc(b.t)}</li>`).join('')}</ul></div>`;
+  }
+
+  const renderEdges = (list, dir) => list.map(e => {
+    const other = dir === 'in' ? e.from : e.to;
+    const otherNode = nodes.find(x => x.id === other);
+    const kindColor = e.kind === 'critical' ? 'var(--critical)' :
+                      e.kind === 'api' ? 'var(--accent-2)' :
+                      e.kind === 'db' ? 'var(--db)' :
+                      e.kind === 'mount' ? '#5cc8ff' : 'var(--muted)';
+    return `<div class="edge-item"><span class="edge-dot" style="background:${kindColor}"></span>${dir === 'in' ? '←' : '→'} ${otherNode ? otherNode.label : other}: ${esc(e.label)}</div>`;
+  }).join('');
+
+  sidebarContent.innerHTML = `
+    <h3>${esc(n.label)}</h3>
+    <div class="path">${esc(n.path || '')}</div>
+    <div class="role">${esc(n.role)}</div>
+    <div class="plain">${esc(n.plain)}</div>
+    <ul class="notes">${notesHTML}</ul>
+    ${incoming.length ? `<div style="font-size:11px;color:var(--text);font-weight:600;margin-bottom:4px;">Incoming (${incoming.length})</div><div class="edge-list">${renderEdges(incoming, 'in')}</div>` : ''}
+    ${outgoing.length ? `<div style="font-size:11px;color:var(--text);font-weight:600;margin-bottom:4px;">Outgoing (${outgoing.length})</div><div class="edge-list">${renderEdges(outgoing, 'out')}</div>` : ''}
+    ${fixesHTML}
+    ${bugsHTML}
+  `;
+}
+
+// ── Pan / Zoom ──
+function applyTransform() {
+  svg.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+}
+
+wrap.addEventListener('mousedown', e => {
+  if (e.target === wrap || e.target === svg) {
+    isPanning = true;
+    panStart = { x: e.clientX - tx, y: e.clientY - ty };
+    wrap.classList.add('grabbing');
+  }
+});
+window.addEventListener('mousemove', e => {
+  if (!isPanning) return;
+  tx = e.clientX - panStart.x;
+  ty = e.clientY - panStart.y;
+  applyTransform();
+});
+window.addEventListener('mouseup', () => {
+  isPanning = false;
+  wrap.classList.remove('grabbing');
+});
+wrap.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = wrap.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  const newScale = Math.max(0.15, Math.min(5, scale * delta));
+  tx = mx - (mx - tx) * (newScale / scale);
+  ty = my - (my - ty) * (newScale / scale);
+  scale = newScale;
+  applyTransform();
+}, { passive: false });
+
+// Click background to clear
+wrap.addEventListener('click', e => {
+  if (e.target === wrap || e.target === svg) clearSelection();
+});
+
+// Controls
+document.getElementById('btn-fit').addEventListener('click', () => {
+  const rect = wrap.getBoundingClientRect();
+  const svgW = parseFloat(svg.getAttribute('width'));
+  const svgH = parseFloat(svg.getAttribute('height'));
+  const scaleX = rect.width / svgW;
+  const scaleY = rect.height / svgH;
+  scale = Math.min(scaleX, scaleY) * 0.95;
+  tx = (rect.width - svgW * scale) / 2;
+  ty = (rect.height - svgH * scale) / 2;
+  applyTransform();
+});
+document.getElementById('btn-in').addEventListener('click', () => {
+  const rect = wrap.getBoundingClientRect();
+  const cx = rect.width / 2, cy = rect.height / 2;
+  const newScale = Math.min(5, scale * 1.3);
+  tx = cx - (cx - tx) * (newScale / scale);
+  ty = cy - (cy - ty) * (newScale / scale);
+  scale = newScale;
+  applyTransform();
+});
+document.getElementById('btn-out').addEventListener('click', () => {
+  const rect = wrap.getBoundingClientRect();
+  const cx = rect.width / 2, cy = rect.height / 2;
+  const newScale = Math.max(0.15, scale / 1.3);
+  tx = cx - (cx - tx) * (newScale / scale);
+  ty = cy - (cy - ty) * (newScale / scale);
+  scale = newScale;
+  applyTransform();
+});
+
+// ── Filter Chips ──
+const chipTags = [
+  { id: 'overview', label: 'Overview', cls: '' },
+  { id: 'messages', label: 'Messages', cls: '' },
+  { id: 'admin', label: 'Admin', cls: '' },
+  { id: 'gallery', label: 'Gallery', cls: '' },
+  { id: 'critical', label: 'Critical Path', cls: 'chip-critical' },
+  { id: 'all', label: 'Show All Wires', cls: '' },
+];
+
+const toolbar = document.getElementById('toolbar');
+chipTags.forEach(ct => {
+  const chip = document.createElement('span');
+  chip.className = `chip ${ct.cls}` + (ct.id === 'overview' ? ' active' : '');
+  chip.textContent = ct.label;
+  chip.addEventListener('click', () => {
+    toolbar.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    activeTag = ct.id;
+    applyFilter(ct.id);
+  });
+  toolbar.appendChild(chip);
+});
+
+function applyFilter(tag) {
+  clearSelection();
+
+  if (tag === 'critical') {
+    // Show only critical path nodes and edges
+    svg.querySelectorAll('[data-node]').forEach(g => {
+      const nid = g.getAttribute('data-node');
+      const node = nodes.find(x => x.id === nid);
+      g.style.opacity = node && node.critical ? '1' : '0.08';
+    });
+    svg.querySelectorAll('[data-edge]').forEach(g => {
+      g.style.opacity = '0.06';
+    });
+    svg.querySelectorAll('[data-edge-label]').forEach(g => {
+      g.style.opacity = '0.06';
+    });
+    // Now show critical edges
+    edges.forEach(e => {
+      if (e.kind === 'critical') {
+        const pathEl = svg.querySelector(`[data-edge="${e.from}-${e.to}"]`);
+        const labelEl = svg.querySelector(`[data-edge-label="${e.from}-${e.to}"]`);
+        if (pathEl) pathEl.style.opacity = '1';
+        if (labelEl) labelEl.style.opacity = '1';
+      }
+    });
+    return;
+  }
+
+  if (tag === 'all') {
+    svg.querySelectorAll('[data-node]').forEach(g => g.style.opacity = '1');
+    svg.querySelectorAll('[data-edge]').forEach(g => g.style.opacity = '1');
+    svg.querySelectorAll('[data-edge-label]').forEach(g => g.style.opacity = '0.7');
+    return;
+  }
+
+  // Tag filter: show nodes with this tag, dim others
+  svg.querySelectorAll('[data-node]').forEach(g => {
+    const tags = g.getAttribute('data-tag');
+    g.style.opacity = tags.includes(tag) ? '1' : '0.08';
+  });
+  svg.querySelectorAll('[data-edge]').forEach(g => {
+    const tags = g.getAttribute('data-tag');
+    g.style.opacity = tags.includes(tag) ? '1' : '0.06';
+  });
+  svg.querySelectorAll('[data-edge-label]').forEach(g => {
+    const tags = g.getAttribute('data-tag');
+    g.style.opacity = tags.includes(tag) ? '0.7' : '0.06';
+  });
+}
+
+// ── Init ──
+buildSVG();
+clearSelection();
+// Auto-fit on load
+setTimeout(() => document.getElementById('btn-fit').click(), 100);
+</script>
+</body>
+</html>
