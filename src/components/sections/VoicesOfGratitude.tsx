@@ -14,7 +14,7 @@ export default function VoicesOfGratitude() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
 
   useEffect(() => {
-    fetch('/api/messages?status=accepted')
+    fetch('/api/messages')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -48,13 +48,7 @@ export default function VoicesOfGratitude() {
             viewport={{ once: true }}
             className="text-center py-12"
           >
-            <p className="text-gray-500 text-lg mb-4">No messages yet. Be the first to share your memories!</p>
-            <Link
-              href="#message-form"
-              className="inline-block bg-gold text-white px-6 py-3 rounded-full font-semibold hover:bg-gold-light transition-colors duration-300"
-            >
-              Leave a Message
-            </Link>
+            <p className="text-gray-500 text-lg">No messages yet.</p>
           </motion.div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">

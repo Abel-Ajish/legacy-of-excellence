@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import MessageForm from '@/components/MessageForm';
 import SmoothScrollProvider from '@/components/SmoothScrollProvider';
 
 interface Message {
@@ -20,7 +19,7 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/messages?status=accepted')
+    fetch('/api/messages')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -70,13 +69,7 @@ export default function MessagesPage() {
             animate={{ opacity: 1 }}
             className="text-center py-12"
           >
-            <p className="text-gray-500 text-lg mb-4">No messages yet. Be the first to share your memories!</p>
-            <a
-              href="#message-form"
-              className="inline-block bg-gold text-white px-6 py-3 rounded-full font-semibold hover:bg-gold-light transition-colors duration-300"
-            >
-              Leave a Message
-            </a>
+            <p className="text-gray-500 text-lg">No messages yet.</p>
           </motion.div>
         ) : (
           <>
@@ -134,10 +127,6 @@ export default function MessagesPage() {
             )}
           </>
         )}
-      </div>
-
-      <div id="message-form">
-        <MessageForm />
       </div>
     </div>
     </SmoothScrollProvider>

@@ -9,7 +9,6 @@ import TheSchoolSheHelpedShape from '@/components/sections/TheSchoolSheHelpedSha
 import GalleryOfMemories from '@/components/sections/GalleryOfMemories';
 import MomentsOfImpact from '@/components/sections/MomentsOfImpact';
 import VoicesOfGratitude from '@/components/sections/VoicesOfGratitude';
-import MessageForm from '@/components/MessageForm';
 import LegacyWall from '@/components/sections/LegacyWall';
 import ThankYouSection from '@/components/sections/ThankYouSection';
 
@@ -25,7 +24,6 @@ export default function Home() {
         <GalleryOfMemories />
         <MomentsOfImpact />
         <VoicesOfGratitude />
-        <MessageForm />
         <LegacyWall />
         <ThankYouSection />
         <footer className="bg-black py-8 px-6 text-center relative">
